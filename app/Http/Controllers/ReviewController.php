@@ -97,18 +97,17 @@ class ReviewController extends Controller
           
         if($Review)
             { 
-                if($Review->image !=null)  $this->deleteImge($Review->image);
-                
-                $resut= $Review->delete();
+                 
+                $result= $Review->delete();
                 $reviews=Review::latest()->get();
-                return response()->jon($reviews, 200);
+                if($result)return response()->json($reviews, 200);
             }
     
            
                   
               
               
-                return response()->json(null, 422);
+            return response()->json(null, 422);
           }
           catch (ValidationException $e) {
               return response()->json(['errors' => $e->errors()], 422);
@@ -166,7 +165,7 @@ class ReviewController extends Controller
                 
                $reviews=Review::latest()->get();
                 
-               return response()->jon($reviews, 200);
+               return response()->json($reviews, 200);
             }
             else{
                 return response()->json(null, 422);
@@ -182,21 +181,21 @@ class ReviewController extends Controller
       
         
     }
-    public function show(Request $request){
+    public function show($id){
         try {  
        
             
-          
-            $validate = Validator::make( $request->all(),
+            $input = [ 'id' =>$id ];
+            $validate = Validator::make( $input,
                 ['id'=>'required|integer|exists:reviews,id']);
             if($validate->fails()){
             return response()->json([
                 'status' => false,
-              'message' => 'خطأ في التحقق',
+                 'message' => 'خطأ في التحقق',
                 'errors' => $validate->errors()
             ], 422);}
             
-           $Review=Review::find($request->id);
+           $Review=Review::find($id);
      
         if($Review)
             { 
@@ -223,34 +222,4 @@ class ReviewController extends Controller
               return response()->json(['message' => 'An error occurred while obtaining this data.'], 500);
           } 
     }
-    public function deleteImage( $url){
-            // Get the full path to the image
-           
-            $fullPath =$url;
-             
-           $parts = explode('/',$fullPath,7);
-            $fullPath = public_path($parts[5].'/'.$parts[6]);
-            
-            // Check if the image file exists and delete it
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
-                
-                return true;
-             }
-             else return false;
-        }
-    public function store_image( $file){
-            $extension = $file->getClientOriginalExtension();
-               
-            $imageName = uniqid() . '.' .$extension;
-            $file->move(public_path('reviews'), $imageName);
-    
-            // Get the full path to the saved image
-            $imagePath = asset('reviews/' . $imageName);
-                    
-             
-           
-           return $imagePath;
-    
-        }
     }

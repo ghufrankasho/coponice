@@ -49,7 +49,7 @@ class PartnerController extends Controller
                 $valdatepartner->validated()
                  ));
             if($request->hasFile('image') and $request->file('image')->isValid()){
-               $partner->image =$this->store_image($request->file('image')); 
+               $partner->image =$this->storeImage($request->file('image'),'partners'); 
             }
             
             $result=$partner->save();
@@ -90,14 +90,15 @@ class PartnerController extends Controller
             ], 422);}
           
            $partner=partner::find($id);
+        
           
         if($partner)
             { 
-                if($partner->image !=null)  $this->deleteImge($partner->image);
+                if($partner->image !=null)  $this->deleteImage($partner->image);
                 
-                $resut= $partner->delete();
+                $result= $partner->delete();
                 $partners=partner::latest()->get();
-                return response()->jon($partners, 200);
+               if($result) return response()->json($partners, 200);
             }
     
            
@@ -109,7 +110,8 @@ class PartnerController extends Controller
           catch (ValidationException $e) {
               return response()->json(['errors' => $e->errors()], 422);
           } catch (\Exception $e) {
-              return response()->json(['message' => 'An error occurred while deleting the partners.'], 500);
+              return response()->json(['message' =>$e
+              , 'An error occurred while deleting the partners.'], 500);
           }
     }
     public function update(Request $request, $id){
@@ -148,9 +150,9 @@ class PartnerController extends Controller
             
            if($request->hasFile('image') and $request->file('image')->isValid()){
                 if($partner->image !=null){
-                        $this->deleteImge($partner->image);
+                        $this->deleteImage($partner->image);
                     }
-                $partner->image = $this->store_image($request->file('image')); 
+                $partner->image = $this->storeImage($request->file('image'),'partners'); 
             }
             
             
@@ -160,7 +162,7 @@ class PartnerController extends Controller
                 
                $partners=partner::latest()->get();
                 
-               return response()->jon($partners, 200);
+               return response()->json($partners, 200);
             }
             else{
                 return response()->json(null, 422);
@@ -176,12 +178,12 @@ class PartnerController extends Controller
       
         
     }
-    public function show(Request $request){
+    public function show($id){
         try {  
        
             
-          
-            $validate = Validator::make( $request->all(),
+            $input = [ 'id' =>$id ];
+            $validate = Validator::make($input,
                 ['id'=>'required|integer|exists:partners,id']);
             if($validate->fails()){
             return response()->json([
@@ -190,7 +192,7 @@ class PartnerController extends Controller
                 'errors' => $validate->errors()
             ], 422);}
             
-           $partner=partner::find($request->id);
+           $partner=partner::find($id);
      
         if($partner)
             { 
@@ -205,7 +207,7 @@ class PartnerController extends Controller
                else{
                 return response()->json([
                     
-                    'data'=> 'لم يتم العثور على الفئة'
+                   null
                       
                    ], 422);
                }
@@ -217,34 +219,4 @@ class PartnerController extends Controller
               return response()->json(['message' => 'An error occurred while obtaining this data.'], 500);
           } 
     }
-    public function deleteImage( $url){
-            // Get the full path to the image
-           
-            $fullPath =$url;
-             
-           $parts = explode('/',$fullPath,7);
-            $fullPath = public_path($parts[5].'/'.$parts[6]);
-            
-            // Check if the image file exists and delete it
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
-                
-                return true;
-             }
-             else return false;
-        }
-    public function store_image( $file){
-            $extension = $file->getClientOriginalExtension();
-               
-            $imageName = uniqid() . '.' .$extension;
-            $file->move(public_path('partners'), $imageName);
-    
-            // Get the full path to the saved image
-            $imagePath = asset('partners/' . $imageName);
-                    
-             
-           
-           return $imagePath;
-    
-        }
-    }
+  }

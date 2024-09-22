@@ -4,40 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Models\Advert;
 use App\Models\Category;
+use App\Models\Partner;
+use App\Models\Review;
+use App\Models\Setting;
 use App\Models\Slider;
 use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Query\Builder;
 
 class AdvertController extends Controller
 {
-    public function index(Request $request=null){
+    public function index(){
         $category=Category::get();
-        if($request!==null)
-      {  $category_id = $request->query('category_id');
-       if($category_id !==null)
-        {$offers= Advert::where([['type',0],['category_id',$category_id],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
-        $codes= Advert::where([['type',1],['category_id',$category_id],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
-        $specials= Advert::where([['type',null],['category_id',$category_id],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
-       }}
-       else{$offers= Advert::where([['type',0],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
+    
+        $offers= Advert::where([['type',0],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
         $codes= Advert::where([['type',1],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
         $specials= Advert::where([['type',null],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
-       }
-        $slider1=Slider::where('type',1)->get();
-        $slider2=Slider::where('type',2)->get();
-        $slider3=Slider::where('type',3)->get();
-        $slider4=Slider::where('type',4)->get();
-        $slider5=Slider::where('type',5)->get();
-        $special_name=Slider::where('type',null)->first();
-     
-        if( $special_name){
-            $special_name=$special_name->makeHidden('image','type');
-            if ($special_name->link==null){
-                $specials=[]; 
-             }}
-        
+       
+       
+        $slider1=Slider::where([['type',1],['visible',1]])->orderby('sorting','DESC')->get();
+        $slider2=Slider::where([['type',2],['visible',1]])->orderby('sorting','DESC')->get();
+        $slider3=Slider::where([['type',3],['visible',1]])->orderby('sorting','DESC')->get();
+        $slider4=Slider::where([['type',4],['visible',1]])->orderby('sorting','DESC')->get();
+        $slider5=Slider::where([['type',5],['visible',1]])->orderby('sorting','DESC')->get();
+        $special_name=Setting::where('key','specialOfferName')->first();
+        $reviews=$this->get_reviews();
+        $partners=$this->get_partners();
+  
           return response()->json([
                 
                 'categories'=>$category,
@@ -49,8 +44,40 @@ class AdvertController extends Controller
                 'slider3'=>$slider3,
                 'slider4'=>$slider4,
                 'slider5'=>$slider5,
-                'special_name'=>$special_name,
+                'specialOfferName'=>$special_name,
+                'reviews'=>$reviews,
+                'partner'=>$partners,
                  ], 200);
+        
+    }
+    private function get_reviews(){
+        try{ 
+                $Review=Review::where('visible',1)->latest()->get();
+                
+              
+                return $Review;
+                
+            }
+        catch (ValidationException $e) {
+                return response()->json(['errors' => $e->errors()], 422);
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'An error occurred while getting  the data.'], 500);
+            }    
+      
+        
+    }
+    private function get_partners(){
+        try{ 
+                $partner=partner::where('visible',1)->latest()->get();
+                
+                return $partner ;
+            }
+        catch (ValidationException $e) {
+                return response()->json(['errors' => $e->errors()], 422);
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'An error occurred while getting  the data.'], 500);
+            }    
+      
         
     }
     public function get(){
@@ -110,12 +137,11 @@ class AdvertController extends Controller
     public function get_data(Request $request){
         try {  
            
+      
             $validate = Validator::make( $request->all(),
                 [
                 'category_id'=>'integer|exists:categories,id',
-                'type'=>'required|bool',
-                'limit'=>'integer',
-                'page'=>'integer'
+                
             ]);
             if($validate->fails()){
                 return response()->json([
@@ -124,18 +150,29 @@ class AdvertController extends Controller
                     'errors' => $validate->errors()
                 ], 422);
             }
-            $type = $request->query('type');
-
-            if ($type === '1') {
-               
-                return $this->get_code($request);
-            } elseif ($type === '0') {
-                return $this->get_offer($request);
-            } elseif (is_null($type)) {
-                return $this->get_special($request);
-            } else {
-                return $this->get_offer($request);
+            $type=null;
+            $page=1;
+            $limit=12;
+            
+              if($request->filled('page')){
+                 
+                  $page=$request->page;
+                 }
+              if($request->filled('limit')){
+                  $limit=$request->limit;
+                  
+                 }
+            if($request->filled('type')){
+                    $type=$request->type;
+                   }
+            if(!$request->filled('category_id'))
+            {
+            return $this->get_adverts($page,$limit,$type);  
             }
+            else{
+                return $this->get_adverts($page,$limit,$type,$request->category_id);  
+            } 
+          
             
                 
          }
@@ -147,125 +184,63 @@ class AdvertController extends Controller
             ], 500);
           }
     }
-    private function get_offer(Request $request){
-            $data=$this->index($request);
-            $responseData = json_decode($data->content(), true);
-            $offers = $responseData['offers'];
-            
-        if($request->page ==1){
+    private function get_adverts($page,$limit,$type,$category_id=null){
+        
+        
+       if($page <=1){
             $value=0;
-           
-            return response()->json(
-                 $offers
-                 , 200);
-            
-        }
-        
-        else{
-            $value=($request->page-1)*$request->limit;
-             
-        }
-        
-        
-        $advert= Advert::where([['type',0],['visible',1]])->offset($value)
-                    ->limit($request->limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
-                    ->get();
-        $ads=array();
-         
-        foreach ($advert as $of) {
-            // Assuming 'id' is a unique identifier for your offers
-            $offerIds = array_column($offers, 'id');
-            
-            if (!in_array($of->id, $offerIds)) {
-                array_push($ads, $of);
-            }
-        }
-            
-          return response()->json(
-                 $ads
-                 , 200);
-    }
-    private function get_code(Request $request){
-         
-        $data=$this->index($request);
-      
-        $responseData = json_decode($data->content(), true);
-        $codes = $responseData['codes'];
-        if($request->page ==1){
-            $value=0;
-            
-            return response()->json(
-                 $codes
-                 , 200);
             
         }
         else{
-            $value=($request->page-1)*$request->limit;
-        }
-        
-        $advert= Advert::where([['type',1],['visible',1]])->offset($value)
-                    ->limit($request->limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
-                    ->get();
-        $ads=array();
-         
-        foreach ($advert as $of) {
-            // Assuming 'id' is a unique identifier for your offers
-            $offerIds = array_column($codes, 'id');
-            
-            if (!in_array($of->id, $offerIds)) {
-                array_push($ads, $of);
+            $value=($page-1)*$limit;
             }
+       
+        if($category_id==null)    
+        {     
+            $advert= Advert::where([['type',$type],['visible',1]])->offset($value)
+                ->limit($limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
+                ->get();
+            $number= count(Advert::where([['type',$type],['visible',1]])
+                ->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
+                ->get());
         }
-            
+        else{
+            $advert= Advert::where([['type',$type],['visible',1],['category_id',$category_id]])->offset($value)
+                ->limit($limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
+                ->get(); 
+            $number= count(Advert::where([['type',$type],['visible',1],['category_id',$category_id]])
+                ->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
+                ->get());
+        }
+                
+                    
+       
+       
           return response()->json(
-                 $ads
-                 , 200);
-    }
-    private function get_special(Request $request){
-            $data=$this->index($request);
-            $responseData = json_decode($data->content(), true);
-            $specials = $responseData['specials'];
-       if($request->page ==1){
-            $value=0;
-            
-            return response()->json(
-                 $specials
-                 , 200);
-            
-        }
-                else{
-                    $value=($request->page-1)*$request->limit;
-                }
-        
-        
-           $advert= Advert::where([['type',null],['visible',1]])->offset($value)
-                    ->limit($request->limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
-                    ->get();
-        $ads=array();
-         
-        foreach ($advert as $of) {
-            // Assuming 'id' is a unique identifier for your offers
-            $offerIds = array_column($specials, 'id');
-            
-            if (!in_array($of->id, $offerIds)) {
-                array_push($ads, $of);
-            }
-        }
-            
-          return response()->json(
-                 $ads
+                ['result'=>$advert,
+                'total'=>$number]
                  , 200);
     }
     public function get_special_for_admin(Request $request){
         // return $advert= Advert::where('type',null)->get();
-         
+     
+        $page=1;
+        $limit=12;
+       
+          if(!$request->filled('page')){
+              $page=$request->page;
+             }
+          if($request->filled('limit')){
+              $limit=$request->limit;
+              
+             }
             
-       if($request->page ==1){ $value=0;}
+       if($page <=1){ $value=0;}
         else{
-                $value=($request->page-1)*$request->limit;
+                $value=($page-1)*$limit;
             }
         $advert= Advert::where('type',null)->offset($value)
-        ->limit($request->limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->get();
+        ->limit($limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->get();
    
          
          
@@ -358,15 +333,15 @@ class AdvertController extends Controller
             }
                 
             if($request->hasFile('image') and $request->file('image')->isValid()){
-                $advert->image = $this->store_image($request->file('image')); 
+                $advert->image = $this->storeImage($request->file('image'),'adverts'); 
             }
             if($request->hasFile('seo_image') and $request->file('seo_image')->isValid()){
-                $advert->seo_image = $this->store_image($request->file('seo_image')); 
+                $advert->seo_image = $this->storeImage($request->file('seo_image'),'adverts'); 
             }
             
             $result=$advert->save();
            if ($result){
-                $adverts=Advert::where('type',$advert->type)->get();
+                $adverts=Advert::where('type',$advert->type)->latest()->get();
                 return response()->json(
                  $adverts
                  , 200);
@@ -415,7 +390,7 @@ class AdvertController extends Controller
                 $type=$advert->type;
                 $result= $advert->delete();
                if($result) {
-                $adverts=Advert::where('type',$type)->get();
+                $adverts=Advert::where('type',$type)->latest()->get();
                 return response()->json(
                    $adverts
                  , 200);
@@ -536,13 +511,13 @@ class AdvertController extends Controller
                     if($advert->image !=null){
                         $this->deleteImage($advert->image);
                     }
-                    $advert->image = $this->store_image($request->file('image')); 
+                    $advert->image = $this->storeImage($request->file('image'),'adverts'); 
                 }
                 if($request->hasFile('seo_image') and $request->file('seo_image')->isValid()){
                     if($advert->seo_image !=null){
                         $this->deleteImage($advert->seo_image);
                     }
-                    $advert->seo_image = $this->store_image($request->file('seo_image')); 
+                    $advert->seo_image = $this->storeImage($request->file('seo_image'),'adverts'); 
                 }
                 if($request->category_id != null){
 
@@ -551,7 +526,7 @@ class AdvertController extends Controller
                 }
                 
                 $advert->save();
-                $adverts=Advert::where('type',$advert->type)->get();
+                $adverts=Advert::where('type',$advert->type)->latest()->get();
                 return response()->json(
                  $adverts
                  , 200);
@@ -574,54 +549,34 @@ class AdvertController extends Controller
       
         
     }
-    public function deleteImage( $url){
-        // Get the full path to the image
-       
-        $fullPath =$url;
-         
-       $parts = explode('/',$fullPath,7);
-      
-       $fullPath = public_path($parts[3].'/'.$parts[4]);
-        //    return [$parts,$fullPath];
-        // $fullPath = public_path($parts[5].'/'.$parts[6]);
-        
-        // Check if the image file exists and delete it
-        if (file_exists($fullPath)) {
-            unlink($fullPath);
-            
-            return true;
-         }
-         else return false;
-    }
-    public function store_image( $file){
-        $extension = $file->getClientOriginalExtension();
-           
-        $imageName = uniqid() . '.' .$extension;
-        $file->move(public_path('adverts'), $imageName);
-
-        // Get the full path to the saved image
-        $imagePath = asset('adverts/' . $imageName);
-                
-         
-       
-       return $imagePath;
-
-    }
     public function suggest(Request $request){
         
-      
+       $type=0;
+       //    $page=1;
+       $limit=12;
         # this function suggest newly added adverts that belongto most commen categories
-        # commen category is the category its advert has higher counter 
-        if($request->type==1)
+        # commen category is the category its advert has higher counter
+        if($request->filled('type')){
+            $type=$request->type;
+           }
+        // if(!$request->filled('page')){
+        //     $page=$request->page;
+        //    }
+        if($request->filled('limit')){
+            $limit=$request->limit;
+            
+           }
+            
+        if($type==1)
         {
              #setp 1 ::get adverts with highest counter
-            $highest_offers=Advert::where([['type',$request->type],['visible',1]])->orderBy('counter', 'desc')->take(10)->get();
+            $highest_offers=Advert::where([['type',1],['visible',1]])->orderBy('counter', 'desc')->take(10)->get();
             $cat_offers=array();
             
             foreach($highest_offers as $offer){ 
                 
                 #step 2::get adverts that belongs to most commen category
-                $offers=Advert::where([['category_id',$offer->category->id],['type',$request->type],['visible',1]])->orderBy('discount', 'desc')->latest()->take(10)->get();
+                $offers=Advert::where([['category_id',$offer->category->id],['type',1],['visible',1]])->orderBy('discount', 'desc')->latest()->take(10)->get();
                 
                 array_push($cat_offers , $offers); 
             }
@@ -629,7 +584,7 @@ class AdvertController extends Controller
             $final_offer=array();
             foreach($cat_offers as $arr_offer){
                 foreach($arr_offer as $offer){
-                    if(!in_array($offer,$final_offer) and $offer->visible and count($final_offer)<$request->limit)
+                    if(!in_array($offer,$final_offer) and $offer->visible and count($final_offer)<$limit)
                     {
                         array_push($final_offer,$offer);}
                 }
@@ -650,7 +605,7 @@ class AdvertController extends Controller
                 'errors' => $validate->errors()
             ], 422);}
             $advert=Advert::find($request->id );
-            $adverts=Advert::where([['category_id',$advert->category_id],['type',0],['visible',1]])->latest()->take($request->limit+1)->get()->toArray();
+            $adverts=Advert::where([['category_id',$advert->category_id],['type',0],['visible',1]])->latest()->take($limit+1)->get()->toArray();
             
              
             $ads=array();
@@ -659,7 +614,7 @@ class AdvertController extends Controller
                 array_push($ads, $of);
             }}
             if(count($ads)<3)
-            {  $offers= Advert::where('type',0)->inRandomOrder()->take($request->limit+1)->get()->toArray(); 
+            {  $offers= Advert::where('type',0)->inRandomOrder()->take($limit)->get()->toArray(); 
                  
                  
                 foreach($offers as $of)
@@ -722,20 +677,52 @@ class AdvertController extends Controller
               return response()->json(['message' => 'An error occurred while increasing the counter of coped advert.'], 500);
           }  
     }
-    public function search($search,Request $request){
+    public function search(Request $request){
         try {
         
-                $input = [ 'search' =>$search ];
+            $type=0;
+            $page=1;
+            $limit=12;
+            $value=0;
+            if($request->filled('type')){
+                  $type=$request->type;
+                 }
+            if($request->filled('page')){
                
-                $validatesearch = Validator::make($input, 
+                  $page=$request->page;
+                 }
+            if($request->filled('limit')){
+                  $limit=$request->limit;
+                  
+                 }
+            if($request->filled('search')){
+                    $search=$request->search;
+                    
+                   }
+            if($page >1){
+                 $value=($page-1)*$limit;
+                    
+                }
+                 
+            $validatesearch = Validator::make($request->all(), 
                 [ 'search' => 'required|string|min:3' ]); 
                 
             if($validatesearch->fails()  ){
-                    return response()->json([
-                        'status' => false,
-                         'message' => 'خطأ في التحقق',
-                        'errors' => $validatesearch->errors()
-                    ], 422);
+               
+                $adverts=advert::where('visible',1)->offset($value)
+                ->limit($limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->get();
+                $number=count(advert::where('visible',1)->get());
+                if($adverts){
+                    return response()->json(
+                    ['result'=>$adverts,
+                     'total'=>$number]
+                        
+                     , 200);
+                   }
+               else  return response()->json(
+                   null
+                        
+                     , 422);  
                     }
             
              
@@ -762,54 +749,61 @@ class AdvertController extends Controller
             
                 $result=array();
                 
-                $start = ($request->page-1)*$request->limit;;
+                 
             
             
                 foreach($data as $advert){
                     
-                    if(! in_array($advert,$result)  and $advert->type==$request->type and $advert->visible){
+                    if(! in_array($advert,$result)  and $advert->type==$type and $advert->visible){
                         array_push($result , $advert);
                         
                     }
                 }
             
                 
-                $slicedData = array_slice($result, $start, $request->limit);
+                $slicedData = array_slice($result, $value, $limit);
                 
                 if ($slicedData)
                 { return response()->json(
                             
-                    $slicedData
+                    ['result'=>$slicedData,
+                    'total'=>count($data)]
                     , 200);  }
                 else{
-                    return response()->json([],204); 
+                    return response()->json( ['result'=>[],
+                    'total'=>0],200); 
                     
                 }
             }
             else
             {
       
-            $result=array();
-            
-            $start = ($request->page-1)*$request->limit;;
-           
- 
-            foreach($adverts as $advert){
-                 if(! in_array($advert,$result)  and $advert->type==$request->type){
-                     array_push($result , $advert);
-                 }
-             }
-              
-             $slicedData = array_slice($result, $start, $request->limit);
-              
-             if ($slicedData)
-               { return response()->json(
-                         
-                   $slicedData
-                , 200);  }
-            else{
-                 return response()->json([],204); 
+                if(count($adverts)>0)
+               { 
+                    $result=array();
                 
+                     
+                
+        
+                    foreach($adverts as $advert){
+                        if(! in_array($advert,$result)  and $advert->type==$type  and $advert->visible){
+                            array_push($result , $advert);
+                        }
+                    }
+                    
+                    $slicedData = array_slice($result, $value, $limit);
+                    
+                    if ($slicedData)
+                    { return response()->json(
+                                
+                        ['result'=> $slicedData,
+                        'total'=>count($adverts)
+                        ]
+                        , 200);  }
+            }
+            else{
+                return response()->json( ['result'=>[],
+                'total'=>0],200); 
             }
            
             }

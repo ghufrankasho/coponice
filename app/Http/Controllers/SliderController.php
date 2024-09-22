@@ -12,36 +12,7 @@ use App\Models\Slider;
 
 class SliderController extends Controller
 {
-    public function deleteImage( $url){
-        // Get the full path to the image
-       
-        $fullPath =$url;
-         
-       $parts = explode('/',$fullPath,7);
-        $fullPath = public_path($parts[5].'/'.$parts[6]);
-        
-        // Check if the image file exists and delete it
-        if (file_exists($fullPath)) {
-            unlink($fullPath);
-            
-            return true;
-         }
-         else return false;
-    }
-    public function store_image( $file){
-        $extension = $file->getClientOriginalExtension();
-           
-        $imageName = uniqid() . '.' .$extension;
-        $file->move(public_path('silders'), $imageName);
-
-        // Get the full path to the saved image
-        $imagePath = asset('silders/' . $imageName);
-                
-         
-       
-       return $imagePath;
-
-    }
+   
     #############  DashBoard functions :) ############
     public function store(Request $request){
         
@@ -82,7 +53,7 @@ class SliderController extends Controller
             $slider->sorting=count($sliders);   
              
             if($request->hasFile('image') and $request->file('image')->isValid()){
-                $slider->image = $this->store_image($request->file('image')); 
+                $slider->image = $this->storeImage($request->file('image'),'sliders'); 
             }
             $result=$slider->save();
            if ($result){
@@ -106,40 +77,40 @@ class SliderController extends Controller
     public function update(Request $request, $id){
         try{
             if($id==36){
-            $input = [ 'id' =>$id ];
-            $validate = Validator::make( $input,
-            ['id'=>'required|integer|exists:sliders,id']);
-            if($validate->fails()){
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'خطأ في التحقق',
-                        'errors' => $validate->errors()
-                    ], 422);
-                }
-            
-            $validateslider = Validator::make($request->all(), [
-                'link' => 'nullable|string',
-               
-            ]);
-            
-            if($validateslider->fails()){
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'خطأ في التحقق',
-                        'errors' => $validate->errors()
-                    ], 422);
-                }
-            $slider = Slider::find($id);       
-            if($slider){  
-                $slider->update($validateslider->validated());
-               
-                 
-                $result=$slider->save();
-                if ($result){
+                $input = [ 'id' =>$id ];
+                $validate = Validator::make( $input,
+                ['id'=>'required|integer|exists:sliders,id']);
+                if($validate->fails()){
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'خطأ في التحقق',
+                            'errors' => $validate->errors()
+                        ], 422);
+                    }
+                
+                $validateslider = Validator::make($request->all(), [
+                    'link' => 'nullable|string',
+                
+                ]);
+                
+                if($validateslider->fails()){
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'خطأ في التحقق',
+                            'errors' => $validate->errors()
+                        ], 422);
+                    }
+                $slider = Slider::find($id);       
+                if($slider){  
+                    $slider->update($validateslider->validated());
+                
                     
-                    return response()->json($slider , 200);
-                }
-                }
+                    $result=$slider->save();
+                    if ($result){
+                        
+                        return response()->json($slider , 200);
+                    }
+                    }
                 
             }
             
@@ -183,7 +154,7 @@ class SliderController extends Controller
                 if($slider->image !=null){
                     $this->deleteImage($slider->image);
                 }
-                $slider->image = $this->store_image($request->file('image')); 
+                $slider->image = $this->storeImage($request->file('image'),'sliders'); 
             }
             
             $result=$slider->save();
@@ -320,7 +291,15 @@ class SliderController extends Controller
     public function get(Request $request){
        
         try {  
-            
+          
+            $validate = Validator::make( $request->all(),
+                ['type'=>'nullable|exists:sliders,type']);
+            if($validate->fails()){
+            return response()->json([
+                'status' => false,
+               'message' => 'خطأ في التحقق',
+                'errors' => $validate->errors()
+            ], 422);}
              
             if($request->type != null){
                 return $this->show($request->type);

@@ -9,7 +9,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SettingController;
 use App\Models\Review;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,16 +26,16 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::controller(CategoryController::class)->prefix('category')->group(function (){
+Route::controller(CategoryController::class)->prefix('category')->group(function (){
   
-//     //return codes or offers belonge to category_id or just codes or offers
-//     Route::get('/adverts','get_data'); 
+  
    
     
-//     //return codes and offers belonge to category_id or just codes and offers
-//     Route::get('/show/{id?}','show_data');
+    //return codes and offers belonge to category_id or just codes and offers
+    Route::get('/','get');
+    Route::get('/{id}','show');
     
-//    });
+   });
    
    
  
@@ -72,16 +74,27 @@ Route::group(['middleware'=>'auth:api','prefix'=>'admin'],function($router){
     Route::get('/slider',[SliderController::class,'get']);
     Route::post('/slider/{id}',[SliderController::class,'update']);
     Route::delete('/slider/{id}',[SliderController::class,'destroy']);
-    Route::get('/slider/hide',[SliderController::class,'hide']);
-    Route::get('/slider/{id}',[SliderController::class,'show']);
+    // Route::get('/slider/hide',[SliderController::class,'hide']);
+    Route::get('/slider/{id}',[SliderController::class,'show_slider']);
 
     //customers
-    Route::get('/customer',[CustomerController::class,'index']);
+    Route::get('/subscriber',[CustomerController::class,'index']);
     //reviews
     Route::post('/review/add',[ReviewController::class,'store']);
     Route::delete('/review/{id}',[ReviewController::class,'destroy']);
     Route::post('/review/{id}',[ReviewController::class,'update']);
     Route::get('/review/{id}',[ReviewController::class,'show']);
+    //partners
+    Route::post('/partner/add',[PartnerController::class,'store']);
+    Route::delete('/partner/{id}',[PartnerController::class,'destroy']);
+    Route::post('/partner/{id}',[PartnerController::class,'update']);
+    Route::get('/partner/{id}',[PartnerController::class,'show']);
+    //settings 
+    Route::post('/setting/add',[SettingController::class,'store']);
+    Route::delete('/setting/{id}',[SettingController::class,'destroy']);
+    Route::post('/setting/{key}',[SettingController::class,'update']);
+    Route::get('/setting/{key}',[SettingController::class,'show']);
+    
  });
 
 Route::controller(SliderController::class)->prefix('slider')->group(function (){
@@ -89,7 +102,7 @@ Route::controller(SliderController::class)->prefix('slider')->group(function (){
     Route::get('/{id}','show_slider');
    });
 
-Route::controller(CustomerController::class)->prefix('subscription')->group(function (){
+Route::controller(CustomerController::class)->prefix('subscriber')->group(function (){
     Route::post('/add','store');
    
     
@@ -110,13 +123,13 @@ Route::controller(AdvertController::class)->prefix('advert')->group(function () 
     Route::get('/suggested', 'suggest')->name('suggestAdvert'); // Get suggested adverts
     
     Route::get('/increase/{id}', 'increase'); // Increase code counter
-    Route::get('/{query}', 'search')->name('searchAdvert')->where('query', '[A-Za-z]+'); // Search adverts by query
+    Route::get('/search', 'search')->name('searchAdvert'); // Search adverts by query
     Route::get('/{id}', 'show')->name('showAdvert')->where('id','[0-9]+'); // Get advert by ID
 });
    
 
 
-   Route::controller(PartnerController::class)->prefix('partner')->group(function (){
+Route::controller(PartnerController::class)->prefix('partner')->group(function (){
    
     Route::post('/add','store')->middleware('auth:api');
     Route::get('/','index');
@@ -125,17 +138,24 @@ Route::controller(AdvertController::class)->prefix('advert')->group(function () 
     
    });
    
-
+Route::get('/view-clear', function() {
+    $exitCode = Artisan::call('cache:clear');
+    $exitCode = Artisan::call('view:clear');
+    $exitCode = Artisan::call('config:cache');
+    $exitCode = Artisan::call('route:cache');
+    return '<h1>View cache cleared</h1>';
+});
+//HHXPQm4Z@3LW3$A
+// ssh -p 65002 u888967071@195.35.49.189
 Route::controller(ReviewController::class)->prefix('review')->group(function (){
    
    
     Route::get('/','index');
     
    });
+Route::controller(SettingController::class)->prefix('setting')->group(function (){
    
-   
-   
-   
+    Route::get('/{key}','show');});
    
    
    
