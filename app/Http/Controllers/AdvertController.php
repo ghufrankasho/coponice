@@ -29,7 +29,7 @@ class AdvertController extends Controller
         $slider3=Slider::where([['type',3],['visible',1]])->orderby('sorting','DESC')->get();
         $slider4=Slider::where([['type',4],['visible',1]])->orderby('sorting','DESC')->get();
         $slider5=Slider::where([['type',5],['visible',1]])->orderby('sorting','DESC')->get();
-        $special_name=Setting::where('key','specialOfferName')->first();
+        $special_name=Setting::where('key','specialOffersName')->first();
         $reviews=$this->get_reviews();
         $partners=$this->get_partners();
   
@@ -153,12 +153,15 @@ class AdvertController extends Controller
             $type=null;
             $page=1;
             $limit=12;
-            
-              if($request->filled('page')){
+            if($request->has('search')){
+                
+                return $this->search($request);
+            }
+            if($request->filled('page')){
                  
                   $page=$request->page;
                  }
-              if($request->filled('limit')){
+            if($request->filled('limit')){
                   $limit=$request->limit;
                   
                  }
@@ -677,7 +680,7 @@ class AdvertController extends Controller
               return response()->json(['message' => 'An error occurred while increasing the counter of coped advert.'], 500);
           }  
     }
-    public function search(Request $request){
+    private function search(Request $request){
         try {
         
             $type=0;
@@ -686,19 +689,19 @@ class AdvertController extends Controller
             $value=0;
             if($request->filled('type')){
                   $type=$request->type;
-                 }
+                }
             if($request->filled('page')){
                
                   $page=$request->page;
-                 }
+                }
             if($request->filled('limit')){
                   $limit=$request->limit;
                   
-                 }
+                }
             if($request->filled('search')){
                     $search=$request->search;
                     
-                   }
+                }
             if($page >1){
                  $value=($page-1)*$limit;
                     
@@ -707,15 +710,17 @@ class AdvertController extends Controller
             $validatesearch = Validator::make($request->all(), 
                 [ 'search' => 'required|string|min:3' ]); 
                 
-            if($validatesearch->fails()  ){
+            if($validatesearch->fails())
+            {
                
                 $adverts=advert::where('visible',1)->offset($value)
                 ->limit($limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->get();
                 $number=count(advert::where('visible',1)->get());
                 if($adverts){
                     return response()->json(
-                    ['result'=>$adverts,
-                     'total'=>$number]
+                    [
+                        'result'=>$adverts,
+                        'total'=>$number]
                         
                      , 200);
                    }
@@ -723,52 +728,53 @@ class AdvertController extends Controller
                    null
                         
                      , 422);  
-                    }
+            }
             
              
-           
+                 
             $adverts=array();
              
             $category= Category::where('name','LIKE', '%' . $search .'%')->with('advert')->first();
             
             if($category)
-           { $adverts= $category['advert'];
-               
-           }
+            { 
+                $adverts= $category['advert'];
+                
+            }
            
-           
-            
             $data = Advert::where('name','LIKE', '%' . $search .'%')
                 ->orwhere('description','LIKE', '%' . $search .'%')->get();      
               
             
-                if(count($data)>0)
+            if(count($data)>0)
             {
                 
-                if(count($adverts)>0){$data=$adverts->merge($data);}
-            
+                if(count($adverts)>0){
+                    
+                    $data=$adverts->merge($data);
+                }
                 $result=array();
-                
-                 
-            
-            
+                $count=0;
                 foreach($data as $advert){
                     
-                    if(! in_array($advert,$result)  and $advert->type==$type and $advert->visible){
+                    if(! in_array($advert,$result)  and $advert->type==$type and $advert->visible)
+                    { 
+                        $count+=1;
                         array_push($result , $advert);
                         
                     }
                 }
-            
-                
+        
                 $slicedData = array_slice($result, $value, $limit);
                 
                 if ($slicedData)
-                { return response()->json(
+                { 
+                    return response()->json(
                             
-                    ['result'=>$slicedData,
-                    'total'=>count($data)]
-                    , 200);  }
+                        ['result'=>$slicedData,
+                        'total'=>$count]
+                        , 200);
+                }
                 else{
                     return response()->json( ['result'=>[],
                     'total'=>0],200); 
@@ -781,12 +787,10 @@ class AdvertController extends Controller
                 if(count($adverts)>0)
                { 
                     $result=array();
-                
-                     
-                
-        
+                    $count=0;
                     foreach($adverts as $advert){
                         if(! in_array($advert,$result)  and $advert->type==$type  and $advert->visible){
+                            $count+=1;
                             array_push($result , $advert);
                         }
                     }
@@ -797,7 +801,7 @@ class AdvertController extends Controller
                     { return response()->json(
                                 
                         ['result'=> $slicedData,
-                        'total'=>count($adverts)
+                        'total'=>$count
                         ]
                         , 200);  }
             }

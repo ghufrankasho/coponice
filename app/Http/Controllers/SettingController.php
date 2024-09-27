@@ -125,8 +125,8 @@ class SettingController extends Controller
             $valdateSetting = Validator::make($request->all(), 
             [
                 'is_hidden' => 'bool',
-                'title' => 'string',
-                'key' => 'string',
+                // 'title' => 'string',
+                // 'key' => 'string',
                 'value_default' => 'string',
                 'value_actual' => 'string',
                 'description' => 'string',
@@ -175,7 +175,7 @@ class SettingController extends Controller
             
             $input = [ 'key' =>$key ];
             $validate = Validator::make( $input,
-                ['key'=>'required|exists:settings,key']);
+                ['key'=>'required']);
             if($validate->fails()){
             return response()->json([
                 'status' => false,
@@ -196,7 +196,7 @@ class SettingController extends Controller
                     $Setting
                   
                 , 200);}
-               else{
+        else{
                 return response()->json([
                     
                     'data'=> 'لم يتم العثور على البيانات'
@@ -205,7 +205,7 @@ class SettingController extends Controller
                }
             }    
           
-          catch (ValidationException $e) {
+        catch (ValidationException $e) {
               return response()->json(['errors' => $e->errors()], 422);
           } catch (\Exception $e) {
               return response()->json(['message' => 'An error occurred while obtaining this data.'], 500);

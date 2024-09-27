@@ -123,7 +123,7 @@ Route::controller(AdvertController::class)->prefix('advert')->group(function () 
     Route::get('/suggested', 'suggest')->name('suggestAdvert'); // Get suggested adverts
     
     Route::get('/increase/{id}', 'increase'); // Increase code counter
-    Route::get('/search', 'search')->name('searchAdvert'); // Search adverts by query
+   // Route::get('/search', 'search')->name('searchAdvert'); // Search adverts by query
     Route::get('/{id}', 'show')->name('showAdvert')->where('id','[0-9]+'); // Get advert by ID
 });
    
@@ -145,8 +145,7 @@ Route::get('/view-clear', function() {
     $exitCode = Artisan::call('route:cache');
     return '<h1>View cache cleared</h1>';
 });
-//HHXPQm4Z@3LW3$A
-// ssh -p 65002 u888967071@195.35.49.189
+
 Route::controller(ReviewController::class)->prefix('review')->group(function (){
    
    

@@ -15,16 +15,16 @@ class CustomerController extends Controller
         try{
            
             $validatecustomer =Validator::make($request->all(), [
-        'email' => 'required|string|unique:customers,email',
-        'phone' => 'required|min:10|numeric|unique:customers,phone',
-    ] );
+                'email' => 'required|string|unique:customers,email',
+                'phone' => 'required|min:10|numeric|unique:customers,phone',
+                ] );
           
-           if($validatecustomer->fails()){
+            if($validatecustomer->fails()){
                 return response()->json([
                     'status' => false,
                     'message' => 'validation error',
                     'errors' => $validatecustomer->errors()
-                ], 401);
+                ], 409);
             }
              $customer = Customer::create(array_merge(
                 $validatecustomer->validated()
@@ -42,7 +42,7 @@ class CustomerController extends Controller
                     'status' => false,
                     'message' =>  ' Failed to add customer ',
                     'data'=> null
-                     ], 401);
+                     ], 422);
             }
 
         }catch (ValidationException $e) {
@@ -61,7 +61,10 @@ class CustomerController extends Controller
        
         
     }
-   public function index(){
+ 
+  
+    
+ public function index(){
        
         try {  
              

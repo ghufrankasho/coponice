@@ -37,13 +37,7 @@ class SliderController extends Controller
                     'errors' => $validateslider->errors()
                 ], 422);
             }
-            $sl=Slider::where('type',null)->first();
-            if($request->type==null and $sl){
-                
-             return response()->json(['message'=>'اسم العرض الممييز موجود مسبقا']
-             , 422);   
-                
-            }
+           
             $slider = Slider::create(array_merge(
                 $validateslider->validated()
                  ));
@@ -76,43 +70,7 @@ class SliderController extends Controller
     }
     public function update(Request $request, $id){
         try{
-            if($id==36){
-                $input = [ 'id' =>$id ];
-                $validate = Validator::make( $input,
-                ['id'=>'required|integer|exists:sliders,id']);
-                if($validate->fails()){
-                        return response()->json([
-                            'status' => false,
-                            'message' => 'خطأ في التحقق',
-                            'errors' => $validate->errors()
-                        ], 422);
-                    }
-                
-                $validateslider = Validator::make($request->all(), [
-                    'link' => 'nullable|string',
-                
-                ]);
-                
-                if($validateslider->fails()){
-                        return response()->json([
-                            'status' => false,
-                            'message' => 'خطأ في التحقق',
-                            'errors' => $validate->errors()
-                        ], 422);
-                    }
-                $slider = Slider::find($id);       
-                if($slider){  
-                    $slider->update($validateslider->validated());
-                
-                    
-                    $result=$slider->save();
-                    if ($result){
-                        
-                        return response()->json($slider , 200);
-                    }
-                    }
-                
-            }
+            
             
             $input = [ 'id' =>$id ];
             $validate = Validator::make( $input,
@@ -229,17 +187,7 @@ class SliderController extends Controller
     public function show($type){
        
         try {  
-             
-            if($type == 'null'){
-                
-            $slider=Slider::where('type',null)->get();
-            
-            return response()->json(
-            
-            $slider
-                  
-               , 200);
-            }
+           
             $input = [ 'type' =>$type ];
             $validate = Validator::make( $input,
                 ['type'=>'required|exists:sliders,type']);
