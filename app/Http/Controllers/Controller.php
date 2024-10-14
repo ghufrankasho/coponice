@@ -10,24 +10,28 @@ use Illuminate\Routing\Controller as BaseController;
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
-    public  function deleteImage( $url){
-        // Get the full path to the image
-       
-        $fullPath =$url;
-         
-        $parts = explode('/',$fullPath,7);
-        // $fullPath = public_path($parts[3].'/'.$parts[4]);
-        
-        $fullPath = public_path($parts[5].'/'.$parts[6]);
-       
+    public function deleteImage($url) {
+        // Parse the URL and get the path part
+        $parsedUrl = parse_url($url, PHP_URL_PATH);
+    
+        // Remove leading slashes from the path if any
+        $parsedUrl = ltrim($parsedUrl, '/');
+    
+        // Construct the full path of the image using public_path
+        $fullPath = public_path($parsedUrl);
+    
         // Check if the image file exists and delete it
         if (file_exists($fullPath)) {
-            unlink($fullPath);
-            
-            return true;
-         }
-         else return false;
+            if (unlink($fullPath)) {
+                return true;
+            } else {
+                return false; // Failed to delete the file
+            }
+        } else {
+            return false; // File does not exist
+        }
     }
+    
     public function storeImage( $file,$name){
         $extension = $file->getClientOriginalExtension();
            

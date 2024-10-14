@@ -589,7 +589,8 @@ class AdvertController extends Controller
                 foreach($arr_offer as $offer){
                     if(!in_array($offer,$final_offer) and $offer->visible and count($final_offer)<$limit)
                     {
-                        array_push($final_offer,$offer);}
+                        array_push($final_offer,$offer);
+                    }
                 }
             }
             return response()->json(
@@ -601,28 +602,33 @@ class AdvertController extends Controller
             $input = [ 'id' =>$request->id ];
             $validate = Validator::make( $input,
                 ['id'=>'required|integer|exists:adverts,id']);
+                
             if($validate->fails()){
-            return response()->json([
-                'status' => false,
-               'message' => 'خطأ في التحقق',
-                'errors' => $validate->errors()
-            ], 422);}
+                return response()->json([
+                    'status' => false,
+                'message' => 'خطأ في التحقق',
+                    'errors' => $validate->errors()
+                ], 422);
+            }
             $advert=Advert::find($request->id );
             $adverts=Advert::where([['category_id',$advert->category_id],['type',0],['visible',1]])->latest()->take($limit+1)->get()->toArray();
             
              
             $ads=array();
             foreach($adverts as $of)
-            {if ($request->id !=$of['id']) {
-                array_push($ads, $of);
-            }}
+            {
+                if ($request->id !=$of['id'] and count($ads)<$limit) {
+                    array_push($ads, $of);
+                 }
+             }
             if(count($ads)<3)
-            {  $offers= Advert::where('type',0)->inRandomOrder()->take($limit)->get()->toArray(); 
+            { 
+                $offers= Advert::where('type',0)->inRandomOrder()->take($limit)->get()->toArray(); 
                  
                  
                 foreach($offers as $of)
                 {
-                    if ($request->id !=$of['id'] and ! in_array($of,$ads)) {
+                    if ($request->id !=$of['id'] and ! in_array($of,$ads) and count($ads)<$limit) {
                     array_push($ads, $of);
                 }
                     
