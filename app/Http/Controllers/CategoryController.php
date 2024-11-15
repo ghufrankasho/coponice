@@ -170,6 +170,10 @@ class CategoryController extends Controller
                 }
                 $category->image = $this->storeImage($request->file('image'),'categories'); 
             }
+            if($request->seo_image=='null' or $request->seo_image==null ){
+                $this->deleteImage($category->seo_image);
+                $category->seo_image=null;
+            }
             if($request->hasFile('seo_image') and $request->file('seo_image')->isValid()){
                 if($category->seo_image !=null){
                     $this->deleteImage($category->seo_image);

@@ -539,6 +539,11 @@ class AdvertController extends Controller
                     }
                     $advert->image = $this->storeImage($request->file('image'),'adverts'); 
                 }
+                if($request->seo_image=='null' or $request->seo_image==null ){
+                     
+                    $this->deleteImage($advert->seo_image);
+                    $advert->seo_image=null;
+                }
                 if($request->hasFile('seo_image') and $request->file('seo_image')->isValid()){
                     if($advert->seo_image !=null){
                         $this->deleteImage($advert->seo_image);

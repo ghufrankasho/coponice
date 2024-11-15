@@ -17,14 +17,14 @@ class UserController extends Controller
         }
         return response()->json(['visitor_numbers'=>$visitor_count ],200);
     }
-    // public function get(){
-    //     $users=User::where('ipaddress','!=',null)->get();
-    //     $visitor_count=0;
-    //     foreach($users as $user){
-    //        $visitor_count +=$user->visitor_count;
-    //     }
-    //     return response()->json(['visitor_numbers'=>$visitor_count ],200);
-    // }
+    public function get(){
+        $users=User::where('ipaddress','!=',null)->get();
+        $visitor_count=0;
+        foreach($users as $user){
+           $visitor_count +=$user->visitor_count;
+        }
+        return response()->json(['visitor_numbers'=>$visitor_count ],200);
+    }
     public function sendEmail(Request $request){
       
         $email = 'ghufrankasho2@gmail.com';
