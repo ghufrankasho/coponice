@@ -92,21 +92,22 @@ class PartnerController extends Controller
            $partner=partner::find($id);
         
           
-        if($partner)
-            { 
-                if($partner->image !=null)  $this->deleteImage($partner->image);
+            if($partner)
+                { 
+                    if($partner->image !=null)  $this->deleteImage($partner->image);
+                    
+                    $result= $partner->delete();
+                    $partners=partner::latest()->get();
+                if($result) return response()->json($partners, 200);
+                }
+        
+            
+                    
                 
-                $result= $partner->delete();
-                $partners=partner::latest()->get();
-               if($result) return response()->json($partners, 200);
-            }
-    
-           
-                  
-              
-              
-                return response()->json(null, 422);
-          }
+                
+            return response()->json(null, 422);
+            
+        }
           catch (ValidationException $e) {
               return response()->json(['errors' => $e->errors()], 422);
           } catch (\Exception $e) {

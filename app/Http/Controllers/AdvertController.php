@@ -24,11 +24,11 @@ class AdvertController extends Controller
         $specials= Advert::where([['type',null],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
        
        
-        $slider1=Slider::where([['type',1],['visible',1]])->orderby('sorting','DESC')->get();
-        $slider2=Slider::where([['type',2],['visible',1]])->orderby('sorting','DESC')->get();
-        $slider3=Slider::where([['type',3],['visible',1]])->orderby('sorting','DESC')->get();
-        $slider4=Slider::where([['type',4],['visible',1]])->orderby('sorting','DESC')->get();
-        $slider5=Slider::where([['type',5],['visible',1]])->orderby('sorting','DESC')->get();
+        $slider1=Slider::where([['type',1],['visible',1]])->orderby('sorting','ASC')->get();
+        $slider2=Slider::where([['type',2],['visible',1]])->orderby('sorting','ASC')->get();
+        $slider3=Slider::where([['type',3],['visible',1]])->orderby('sorting','ASC')->get();
+        $slider4=Slider::where([['type',4],['visible',1]])->orderby('sorting','ASC')->get();
+        $slider5=Slider::where([['type',5],['visible',1]])->orderby('sorting','ASC')->get();
         $special_name=Setting::where('key','specialOffersName')->first();
         $reviews=$this->get_reviews();
         $partners=$this->get_partners();
@@ -80,20 +80,43 @@ class AdvertController extends Controller
       
         
     }
-    public function get(){
+    public function get(Request $request){
         try{
-            $adverts=advert::latest()->get();
-            
-            if($adverts){
-                return response()->json(
-                $adverts
-                    
-                 , 200);
-               }
-           else  return response()->json(
-               null
-                    
-                 , 422);
+
+            $type=null;
+            $page=1;
+            $limit=12;
+           
+            if($request->filled('page')){
+                 
+                  $page=$request->page;
+            }
+            if($request->filled('limit')){
+                $limit=$request->limit;
+                  
+            }
+            if($request->filled('type')){
+                $type=$request->type;
+            }
+            if($page <=1){
+                $value=0;      
+            }
+            else{
+                $value=($page-1)*$limit;
+            }
+               
+          
+                
+            $advert= Advert::where('type',$type)->offset($value)
+                ->limit($limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
+                ->get();
+            $number= count(Advert::where('type',$type)
+                ->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
+                ->get());
+            return response()->json(
+                           ['result'=>$advert,
+                           'total'=>$number]
+                            , 200);
           
            }
             
@@ -102,7 +125,7 @@ class AdvertController extends Controller
         catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
           } catch (\Exception $e) {
-            return response()->json(['message' => 'An error occurred while requesting  adverts .'], 500);
+            return response()->json(['message'=>'An error occurred while requesting  adverts .'], 500);
           }
         
     }

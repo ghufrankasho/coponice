@@ -12,8 +12,7 @@ use App\Models\Slider;
 
 class SliderController extends Controller
 {
-   
-    #############  DashBoard functions :) ############
+ 
     public function store(Request $request){
         
         try{
@@ -89,7 +88,7 @@ class SliderController extends Controller
                 'alt'=>'string',
                 'visible'=>'bool',
                 'expire_date'=>'date',
-                'sorting'=>'integer',
+                
                 
                 'image' => 'file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
             ]);
@@ -103,9 +102,11 @@ class SliderController extends Controller
                         'message' => 'خطأ في التحقق',
                         'errors' => $validate->errors()
                     ], 422);
-                }              
+                }  
+                         
             $slider = Slider::find($id);
             
+         
           if($slider)  
           {  $slider->update($validateslider->validated());
             if($request->hasFile('image') and $request->file('image')->isValid()){
@@ -117,7 +118,8 @@ class SliderController extends Controller
             
             $result=$slider->save();
             if ($result){
-               $sliders=Slider::where('type','!=',null)->get();
+                
+               $sliders=Slider::where('visible',1)->get();
                 return response()->json($sliders , 200);
             }
            
@@ -150,24 +152,19 @@ class SliderController extends Controller
             ], 422);}
           
             $slider=Slider::find($id);
-            if( $slider->type==null) 
-            {
-                
-             return response()->json(['message'=>'لا يمكن حذف هذه البيانات ']
-             , 422);   
-                
-            
-            }
+           
             if($slider )
             { 
                 if($slider->image!=null) 
                 {
                     $this->deleteImage($slider->image);
                 }
-              
+                $type=$slider->type;
                 $result= $slider->delete();
                 if($result)
-                 {$sliders=Slider::where('type','!=',null)->get();
+                 {
+                    $this->sort_sliders($type);
+                    $sliders=Slider::where('visible',1)->get();
              
                 return response()->json(
                  $sliders
@@ -190,13 +187,13 @@ class SliderController extends Controller
            
             $input = [ 'type' =>$type ];
             $validate = Validator::make( $input,
-                ['type'=>'required|exists:sliders,type']);
+                ['type' => 'required|in:1,2,3,4,5']);
             if($validate->fails()){
             return response()->json([
                 'status' => false,
                 'message' => 'validation error',
                 'errors' => $validate->errors()
-            ], 422);}
+            ], 404);}
           
             $slider=Slider::where('type',$type)->get();
             
@@ -247,7 +244,7 @@ class SliderController extends Controller
                 'status' => false,
                'message' => 'خطأ في التحقق',
                 'errors' => $validate->errors()
-            ], 422);}
+            ], 404);}
              
             if($request->type != null){
                 return $this->show($request->type);
@@ -293,6 +290,16 @@ class SliderController extends Controller
           } catch (\Exception $e) {
               return response()->json(['message' => 'An error occurred while deleting the categroy.'], 500);
           }
+    }
+    private function sort_sliders($type){
+        
+        $sliders=Slider::where('type',$type)->orderby('sorting','ASC')->get();
+        $i=1;
+        foreach($sliders as $slider){
+            $slider->sorting=$i;
+            $slider->save();
+            $i++;
+        }
     }
     
     

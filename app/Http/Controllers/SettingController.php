@@ -110,24 +110,23 @@ class SettingController extends Controller
               return response()->json(['message' => 'An error occurred while deleting this Setting.'], 500);
           }
     }
-    public function update(Request $request, $key){
+    public function update(Request $request, $id){
         try{
-            $input = [ 'key' =>$key ];
+            $input = [ 'id' =>$id ];
             $validate = Validator::make( $input,
-            ['key'=>'required|exists:Settings,key']);
+            ['id'=>'required|exists:Settings,id']);
             if($validate->fails()){
                     return response()->json([
                         'status' => false,
                         'message' => 'خطأ في التحقق',
                         'errors' => $validate->errors()
-                    ], 422);
+                    ], 404);
                 }
             $valdateSetting = Validator::make($request->all(), 
             [
                 'is_hidden' => 'bool',
-                // 'title' => 'string',
-                // 'key' => 'string',
-                'value_default' => 'string',
+                
+                
                 'value_actual' => 'string',
                 'description' => 'string',
             ]);
@@ -141,7 +140,7 @@ class SettingController extends Controller
                     'errors' => $valdateSetting->errors()
                 ], 422);
             }
-            $Setting = Setting::where('key',$key)->first();
+            $Setting = Setting::find($id);
             
             $result= $Setting->update($valdateSetting->validated() );
             
@@ -169,41 +168,71 @@ class SettingController extends Controller
       
         
     }
-    public function show($key){
+    public function show($data){
         try {  
        
             
-            $input = [ 'key' =>$key ];
-            $validate = Validator::make( $input,
-                ['key'=>'required']);
-            if($validate->fails()){
-            return response()->json([
-                'status' => false,
-                 'message' => 'خطأ في التحقق',
-                'errors' => $validate->errors()
-            ], 422);}
-            
-            $Setting = Setting::where('key',$key)->first();
-            
-     
-        if($Setting)
+            $input = [ 'id' =>$data ,
+                       'key' =>$data];
+           if (gettype(json_decode($data))=='integer')
+            {
+               
+                $validateid= Validator::make( $input,
+                ['id'=>'required|exists:Settings,id']);
+                
+                if($validateid->fails()){
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'خطأ في التحقق',
+                        'errors' => $validateid->errors()
+                    ], 404);
+                    
+                }
+            $Setting = Setting::find($data) ;
+            if($Setting)
             { 
-               
-              
-
                 return response()->json(
-               
+            
                     $Setting
-                  
+                
                 , 200);}
         else{
                 return response()->json([
                     
                     'data'=> 'لم يتم العثور على البيانات'
-                      
-                   ], 422);
-               }
-            }    
+                    
+                ], 422);
+            }
+            }
+            
+            $validatekey= Validator::make( $input,
+                ['key'=>'required|exists:Settings,key']);
+         
+            if($validatekey->fails()){
+                return response()->json([
+                    'status' => false,
+                     'message' => 'خطأ في التحقق',
+                    'errors' => $validatekey->errors()
+                ], 404);
+                
+            }
+            $Setting = Setting::where('key',$data)->first();
+          
+            if($Setting)
+                { 
+                    return response()->json(
+                
+                        $Setting
+                    
+                    , 200);}
+            else{
+                    return response()->json([
+                        
+                        'data'=> 'لم يتم العثور على البيانات'
+                        
+                    ], 422);
+                }
+        }    
           
         catch (ValidationException $e) {
               return response()->json(['errors' => $e->errors()], 422);

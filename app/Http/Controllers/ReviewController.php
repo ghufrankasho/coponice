@@ -210,7 +210,7 @@ class ReviewController extends Controller
                else{
                 return response()->json([
                     
-                    'data'=> 'لم يتم العثور على الفئة'
+                    'data'=> 'لم يتم العثور على البيانات'
                       
                    ], 422);
                }

@@ -222,11 +222,11 @@ class CategoryController extends Controller
                
             
 
-                return response()->json([
+                return response()->json(
                
                 $category
                   
-               ], 200);}
+               , 200);}
                else{
                 return response()->json([
                     
