@@ -367,9 +367,11 @@ class AdvertController extends Controller
             
             $result=$advert->save();
            if ($result){
-                $adverts=Advert::where('type',$advert->type)->latest()->get();
+                
                 return response()->json(
-                 $adverts
+                    [
+                        'result'=>"data added successfully"
+                       ]
                  , 200);
           }
             else{
@@ -413,12 +415,14 @@ class AdvertController extends Controller
                     $this->deleteImage($advert->seo_image);
                 }
                
-                $type=$advert->type;
+                
                 $result= $advert->delete();
                if($result) {
-                $adverts=Advert::where('type',$type)->latest()->get();
+                
                 return response()->json(
-                   $adverts
+                    [
+                        'result'=>"data deleted successfully"
+                       ]
                  , 200);
                 }
             }
@@ -470,10 +474,11 @@ class AdvertController extends Controller
                     'expire_date' => 'nullable|date',
                     'short_description' => 'nullable|string',
                     // seo columns
-                    'seo_image' => 'file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
+                    'seo_image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
                     'seo_title' => 'nullable|string',
                     'seo_description' => 'nullable|string',
                     'seo_keywords' => 'nullable|string',
+                    'seo_delete' => 'nullable|string',
 
             ]);
             $validateadvert->sometimes('image', 'required|mimetypes:image/vnd.wap.wbmp', function ($input) {
@@ -503,10 +508,11 @@ class AdvertController extends Controller
                     
                     // seo columns
                      
-                    'seo_image' => 'file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
+                    'seo_image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
                     'seo_title' => 'nullable|string',
                     'seo_description' => 'nullable|string',
                     'seo_keywords' => 'nullable|string',
+                    'seo_delete' => 'nullable|string',
 
         ]);
         $validateadvert->sometimes('image', 'required|mimetypes:image/vnd.wap.wbmp', function ($input) {
@@ -539,11 +545,11 @@ class AdvertController extends Controller
                     }
                     $advert->image = $this->storeImage($request->file('image'),'adverts'); 
                 }
-                if($request->seo_image=='null' or $request->seo_image==null ){
-                     
+                if($request->has('seo_delete') ){
+                 
                     $this->deleteImage($advert->seo_image);
-                    $advert->seo_image=null;
-                }
+                      $advert->seo_image=null;
+                  }
                 if($request->hasFile('seo_image') and $request->file('seo_image')->isValid()){
                     if($advert->seo_image !=null){
                         $this->deleteImage($advert->seo_image);
@@ -557,9 +563,11 @@ class AdvertController extends Controller
                 }
                 
                 $advert->save();
-                $adverts=Advert::where('type',$advert->type)->latest()->get();
+              
                 return response()->json(
-                 $adverts
+                    [
+                        'result'=>"data updated successfully"
+                       ]
                  , 200);
             }
             else{
@@ -891,10 +899,6 @@ class AdvertController extends Controller
         $wordString = implode(' ', $wordArray);
         return [$result, $wordString];
     }
-    public function update_images(){
-       $advert=Advert::find(309);
-       $parts = explode('/',$advert->image,5);  
-       return $parts;
-    }
+   
    
 }

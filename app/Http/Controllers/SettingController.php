@@ -114,7 +114,7 @@ class SettingController extends Controller
         try{
             $input = [ 'id' =>$id ];
             $validate = Validator::make( $input,
-            ['id'=>'required|exists:Settings,id']);
+            ['id'=>'required|exists:settings,id']);
             if($validate->fails()){
                     return response()->json([
                         'status' => false,
@@ -124,11 +124,11 @@ class SettingController extends Controller
                 }
             $valdateSetting = Validator::make($request->all(), 
             [
-                'is_hidden' => 'bool',
+                'is_hidden' => 'nullable|bool',
                 
                 
-                'value_actual' => 'string',
-                'description' => 'string',
+                'value_actual' => 'nullable|string',
+                'description' => 'nullable|string',
             ]);
            
            

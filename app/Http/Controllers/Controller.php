@@ -13,13 +13,14 @@ class Controller extends BaseController
     public function deleteImage($url) {
         // Parse the URL and get the path part
         $parsedUrl = parse_url($url, PHP_URL_PATH);
-    
+    // return [$parsedUrl];
         // Remove leading slashes from the path if any
         $parsedUrl = ltrim($parsedUrl, '/');
-    
+        // return [$parsedUrl];
         // Construct the full path of the image using public_path
         $fullPath = public_path($parsedUrl);
-    
+        gc_collect_cycles();
+        // return [$fullPath];
         // Check if the image file exists and delete it
         if (file_exists($fullPath)) {
             if (unlink($fullPath)) {

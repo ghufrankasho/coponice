@@ -301,6 +301,53 @@ class SliderController extends Controller
             $i++;
         }
     }
+    public function sliders_sorting(Request $request){
+        try{
+           
+            $validator = Validator::make($request->all(), [
+                '*.id' => 'required|integer|exists:sliders,id',
+                '*.sorting' => 'required|integer',
+                '*.type' => 'required|in:1,2,3,4,5',
+                
+            ]);
+                 
+            if($validator->fails()){
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'خطأ في التحقق',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }  
+             $sliders_arr=$request->all();
+             $type=$sliders_arr[0]['type'];
+             $sliders=Slider::where('type',$type)->get();
+             $max=collect($sliders_arr)->max('sorting'); 
+             if(count($sliders)!==$max){
+                return response()->json(
+                    [
+                        'status' => false,
+                        'errors' => 'maximum sorting is not equal than numbers of images  in this slider',
+                       
+                    ], 422);
+             }
+             $data=sort($sliders_arr);
+             return  [ $data];
+           if ($sliders){
+                return response()->json( $sliders
+                 , 200);
+            }
+            else{
+                return response()->json(null, 204);
+            }
+
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        } 
+    }
     
     
   

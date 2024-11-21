@@ -77,7 +77,7 @@ Route::group(['middleware'=>'auth:api','prefix'=>'admin'],function($router){
     Route::get('/reviews/{id}',[ReviewController::class,'show']);
     //partners
     Route::post('/partners/add',[PartnerController::class,'store']);
-    Route::post('/partners',[PartnerController::class,'get']);
+    Route::get('/partners',[PartnerController::class,'get']);
     Route::delete('/partners/{id}',[PartnerController::class,'destroy']);
     Route::post('/partners/{id}',[PartnerController::class,'update']);
     Route::get('/partners/{id}',[PartnerController::class,'show']);
@@ -85,14 +85,16 @@ Route::group(['middleware'=>'auth:api','prefix'=>'admin'],function($router){
    // Route::post('/settings/add',[SettingController::class,'store']);
     Route::get('/settings',[SettingController::class,'get']);
    // Route::delete('/settings/{id}',[SettingController::class,'destroy']);
-    Route::post('/settings/{id}',[SettingController::class,'update']);
     Route::get('/settings/{data}',[SettingController::class,'show']);
+    Route::post('/settings/{id}',[SettingController::class,'update']);
+  
     
  });
 
 Route::controller(SliderController::class)->prefix('sliders')->group(function (){
   
     Route::get('/{id}','show_slider');
+    Route::post('/sort','sliders_sorting');
    });
 
 Route::controller(CustomerController::class)->prefix('subscribers')->group(function (){
