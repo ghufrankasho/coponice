@@ -80,7 +80,7 @@ class SettingController extends Controller
              
             $input = [ 'id' =>$id ];
             $validate = Validator::make( $input,
-                ['id'=>'required|integer|exists:Settings,id']);
+                ['id'=>'required|integer|exists:settings,id']);
             if($validate->fails()){
             return response()->json([
                 'status' => false,
@@ -178,7 +178,7 @@ class SettingController extends Controller
             {
                
                 $validateid= Validator::make( $input,
-                ['id'=>'required|exists:Settings,id']);
+                ['id'=>'required|exists:settings,id']);
                 
                 if($validateid->fails()){
                     return response()->json([
@@ -206,7 +206,7 @@ class SettingController extends Controller
             }
             
             $validatekey= Validator::make( $input,
-                ['key'=>'required|exists:Settings,key']);
+                ['key'=>'required|exists:settings,key']);
          
             if($validatekey->fails()){
                 return response()->json([
