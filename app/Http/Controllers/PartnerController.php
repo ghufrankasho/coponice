@@ -57,7 +57,9 @@ class PartnerController extends Controller
            if ($result){
                 return response()->json(
                     
-            partner::latest()->get()
+                    [
+                        'result'=>"data added successfully"
+                       ]
                  , 201);
             }
             else{
@@ -97,8 +99,10 @@ class PartnerController extends Controller
                     if($partner->image !=null)  $this->deleteImage($partner->image);
                     
                     $result= $partner->delete();
-                    $partners=partner::latest()->get();
-                if($result) return response()->json($partners, 200);
+                    
+                if($result) return response()->json( [
+                    'result'=>"data deleted successfully"
+                   ], 200);
                 }
         
             
@@ -161,9 +165,11 @@ class PartnerController extends Controller
             
             if ($result){
                 
-               $partners=partner::latest()->get();
+              
                 
-               return response()->json($partners, 200);
+               return response()->json( [
+                'result'=>"data updated successfully"
+               ], 200);
             }
             else{
                 return response()->json(null, 422);

@@ -56,7 +56,9 @@ class SettingController extends Controller
            if ( $Setting){
                 return response()->json(
                     
-            Setting::latest()->get()
+                    [
+                        'result'=>"data added successfully"
+                       ]
                  , 201);
             }
             else{
@@ -94,8 +96,10 @@ class SettingController extends Controller
             { 
                  
                 $result= $Setting->delete();
-                $Settings=Setting::latest()->get();
-                if($result)return response()->json($Settings, 200);
+                
+                if($result)return response()->json( [
+                    'result'=>"data deleted successfully"
+                   ], 200);
             }
     
            
@@ -150,9 +154,10 @@ class SettingController extends Controller
             
             if ($result){
                 
-               $Settings=Setting::latest()->get();
-                
-               return response()->json($Settings, 200);
+               
+               return response()->json( [
+                'result'=>"data updated successfully"
+               ], 200);
             }
             else{
                 return response()->json(null, 422);

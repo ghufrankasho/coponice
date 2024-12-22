@@ -7,8 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Slider;
+use Ramsey\Uuid\Type\Integer;
 
 class SliderController extends Controller
 {
@@ -48,10 +50,15 @@ class SliderController extends Controller
             if($request->hasFile('image') and $request->file('image')->isValid()){
                 $slider->image = $this->storeImage($request->file('image'),'sliders'); 
             }
+           
             $result=$slider->save();
+            $type=$slider->type;
+          
            if ($result){
-               $sliders=Slider::latest()->get();
-                return response()->json($sliders , 201);
+                $this->sort_sliders($type);
+                return response()->json( [
+                    'result'=>"data added successfully"
+                   ] , 201);
             }
             else{
                 return response()->json(null, 204);
@@ -115,12 +122,15 @@ class SliderController extends Controller
                 }
                 $slider->image = $this->storeImage($request->file('image'),'sliders'); 
             }
-            
+            $type=$slider->type;
+          
             $result=$slider->save();
             if ($result){
-                
-               $sliders=Slider::where('visible',1)->get();
-                return response()->json($sliders , 200);
+                $this->sort_sliders($type);
+            //    $sliders=Slider::where('visible',1)->get();
+                return response()->json( [
+                    'result'=>"data updated successfully"
+                   ] , 200);
             }
            
           }
@@ -164,10 +174,12 @@ class SliderController extends Controller
                 if($result)
                  {
                     $this->sort_sliders($type);
-                    $sliders=Slider::where('visible',1)->get();
+                   
              
                 return response()->json(
-                 $sliders
+                    [
+                        'result'=>"data deleted successfully"
+                       ]
                  , 200);}
                 
             }
@@ -301,53 +313,57 @@ class SliderController extends Controller
             $i++;
         }
     }
-    public function sliders_sorting(Request $request){
-        try{
-           
-            $validator = Validator::make($request->all(), [
-                '*.id' => 'required|integer|exists:sliders,id',
-                '*.sorting' => 'required|integer',
-                '*.type' => 'required|in:1,2,3,4,5',
-                
-            ]);
-                 
-            if($validator->fails()){
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'خطأ في التحقق',
-                        'errors' => $validator->errors()
-                    ], 422);
-                }  
-             $sliders_arr=$request->all();
-             $type=$sliders_arr[0]['type'];
-             $sliders=Slider::where('type',$type)->get();
-             $max=collect($sliders_arr)->max('sorting'); 
-             if(count($sliders)!==$max){
-                return response()->json(
-                    [
-                        'status' => false,
-                        'errors' => 'maximum sorting is not equal than numbers of images  in this slider',
-                       
-                    ], 422);
-             }
-             $data=sort($sliders_arr);
-             return  [ $data];
-           if ($sliders){
-                return response()->json( $sliders
-                 , 200);
-            }
-            else{
-                return response()->json(null, 204);
-            }
-
-        }
-        catch (\Throwable $th) {
+    public function reorderSliders(Request $request)
+    {
+    
+        $data = $request->all();
+        $max=count(Slider::where('type',$data[0]['type'])->get());
+        // Validation to ensure the structure is correct
+        $validateslider = Validator::make( $request->all(),
+           [ '*.id' => 'required|exists:sliders,id',
+           '*.sorting' => [
+            'required',
+            'integer',
+            'min:1',
+            function ($attribute, $value, $fail) use ($max) {
+                if ($value > $max) {
+                    $fail("The {$attribute} يجب ان تكون اقل او تساوي عدد السلايدر التابعة لنوع معين .");
+                }
+            },
+        ],
+             
+            '*.type' => 'required|integer|exists:sliders,type',] // Ensure the type exists in sliders
+        );
+        if($validateslider->fails()){
             return response()->json([
                 'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        } 
+                 'message' => 'خطأ في التحقق'
+                 ,
+                'errors' => $validateslider->errors()
+            ], 422);
+        }
+        
+        // Check for duplicate sorting values
+        $sortingValues = array_column($data, 'sorting');
+        
+      
+       
+        if (count($sortingValues) !== count(array_unique($sortingValues))) {
+            return response()->json(['errors' => 'لا يجب أن يكون هناك أي قيم مكررة'], 422);
+        }
+       
+       
+        try {
+            foreach ($data as $slider) {
+                DB::table('sliders')->where('id', $slider['id'])->update(['sorting' => $slider['sorting']]);
+            }
+            return response()->json(['data' => 'تم الترتيب بنجاح.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred while sorting sliders.'], 500);
+        }
     }
+    
+    
     
     
   

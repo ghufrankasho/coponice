@@ -61,10 +61,11 @@ Route::group(['middleware'=>'auth:api','prefix'=>'admin'],function($router){
 
     //Sliders
     Route::post('/sliders/add',[SliderController::class,'store']);
+    Route::post('/sliders/sort', [SliderController::class, 'reorderSliders']);
     Route::get('/sliders',[SliderController::class,'get']);
     Route::post('/sliders/{id}',[SliderController::class,'update']);
     Route::delete('/sliders/{id}',[SliderController::class,'destroy']);
-    // Route::get('/sliders/hide',[SliderController::class,'hide']);
+   
     Route::get('/sliders/{id}',[SliderController::class,'show_slider']);
 
     //customers
@@ -91,6 +92,11 @@ Route::group(['middleware'=>'auth:api','prefix'=>'admin'],function($router){
     
  });
 
+
+
+
+
+
 Route::controller(SliderController::class)->prefix('sliders')->group(function (){
   
     Route::get('/{id}','show_slider');
@@ -113,6 +119,7 @@ Route::controller(UserController::class)->prefix('users')->group(function (){
 
 Route::controller(AdvertController::class)->prefix('adverts')->group(function () {
    
+    Route::get('/hidd', 'hidde_main');
     Route::get('/', 'get_data')->name('getAdvert'); // Get adverts by type /category_id
     Route::get('/index', 'index')->name('indexAdvert'); // List all adverts
     Route::get('/suggested', 'suggest')->name('suggestAdvert'); // Get suggested adverts
@@ -147,7 +154,6 @@ Route::controller(ReviewController::class)->prefix('reviews')->group(function ()
    
     Route::get('/{key}','show');
 });
-
 Route::controller(CategoryController::class)->prefix('categories')->group(function (){
 
     //return codes and offers belonge to category_id or just codes and offers
