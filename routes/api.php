@@ -119,6 +119,7 @@ Route::controller(UserController::class)->prefix('users')->group(function (){
 
 Route::controller(AdvertController::class)->prefix('adverts')->group(function () {
    
+    Route::get('/hidd', 'hidde_main');
     Route::get('/', 'get_data')->name('getAdvert'); // Get adverts by type /category_id
     Route::get('/index', 'index')->name('indexAdvert'); // List all adverts
     Route::get('/suggested', 'suggest')->name('suggestAdvert'); // Get suggested adverts
@@ -127,8 +128,10 @@ Route::controller(AdvertController::class)->prefix('adverts')->group(function ()
    // Route::get('/search', 'search')->name('searchAdvert'); // Search adverts by query
     Route::get('/{id}', 'show')->name('showAdvert')->where('id','[0-9]+'); // Get advert by ID
 });
-Route::controller(PartnerController::class)->prefix('partners')->group(function (){
    
+
+
+Route::controller(PartnerController::class)->prefix('partner')->group(function (){
    
     Route::get('/','get');
     
@@ -153,7 +156,6 @@ Route::controller(ReviewController::class)->prefix('reviews')->group(function ()
    
     Route::get('/{key}','show');
 });
-
 Route::controller(CategoryController::class)->prefix('categories')->group(function (){
 
     //return codes and offers belonge to category_id or just codes and offers
