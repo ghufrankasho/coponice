@@ -62,7 +62,9 @@ class CategoryController extends Controller
            if ($result){
                 return response()->json(
                     
-                Category::get()
+               [
+                'result'=>"data added successfully"
+               ]
                  , 201);
             }
             else{
@@ -110,8 +112,10 @@ class CategoryController extends Controller
                    }
                   $category->save();
                 $result= $category->delete();
-                $category=Category::get();
-                return response()->json($category, 200);
+                
+                return response()->json([
+                    'result'=>"data deleted successfully"
+                   ], 200);
             }
     
            
@@ -143,10 +147,12 @@ class CategoryController extends Controller
                 'name' => 'string',
                 'image' => 'file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
                 // seo columns
-                'seo_image' => 'file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
+                'seo_image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
                 'seo_title' => 'nullable|string',
                 'seo_description' => 'nullable|string',
                 'seo_keywords' => 'nullable|string',
+                'seo_delete' => 'nullable|string',
+                
             ]);
             $validatecategory->sometimes('image', 'required|mimetypes:image/vnd.wap.wbmp', function ($input) {
                   return $input->file('image') !== null && $input->file('image')->getClientOriginalExtension() === 'wbmp';
@@ -170,6 +176,12 @@ class CategoryController extends Controller
                 }
                 $category->image = $this->storeImage($request->file('image'),'categories'); 
             }
+             
+            if($request->has('seo_delete') ){
+                 
+              $this->deleteImage($category->seo_image);
+                $category->seo_image=null;
+            }
             if($request->hasFile('seo_image') and $request->file('seo_image')->isValid()){
                 if($category->seo_image !=null){
                     $this->deleteImage($category->seo_image);
@@ -180,8 +192,10 @@ class CategoryController extends Controller
             $result = $category->update();
             
             if ($result){
-                $category=Category::get();
-                return response()->json($category, 200);
+                 
+                return response()->json([
+                    'result'=>"data updated successfully"
+                   ], 200);
             }
             else{
                 return response()->json(null, 422);
@@ -222,11 +236,11 @@ class CategoryController extends Controller
                
             
 
-                return response()->json([
+                return response()->json(
                
                 $category
                   
-               ], 200);}
+               , 200);}
                else{
                 return response()->json([
                     

@@ -21,18 +21,22 @@ class AdvertController extends Controller
     
         $offers= Advert::where([['type',0],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
         $codes= Advert::where([['type',1],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
-        $specials= Advert::where([['type',null],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
+        $specials=[];
+        
        
+        $slider1=Slider::where([['type',1],['visible',1]])->orderby('sorting','ASC')->get();
+        $slider2=Slider::where([['type',2],['visible',1]])->orderby('sorting','ASC')->get();
+        $slider3=Slider::where([['type',3],['visible',1]])->orderby('sorting','ASC')->get();
+        $slider4=Slider::where([['type',4],['visible',1]])->orderby('sorting','ASC')->get();
+        $slider5=Slider::where([['type',5],['visible',1]])->orderby('sorting','ASC')->get();
+        $special_name=Setting::where([['key','specialOffersName'],['is_hidden',0]])->first();
        
-        $slider1=Slider::where([['type',1],['visible',1]])->orderby('sorting','DESC')->get();
-        $slider2=Slider::where([['type',2],['visible',1]])->orderby('sorting','DESC')->get();
-        $slider3=Slider::where([['type',3],['visible',1]])->orderby('sorting','DESC')->get();
-        $slider4=Slider::where([['type',4],['visible',1]])->orderby('sorting','DESC')->get();
-        $slider5=Slider::where([['type',5],['visible',1]])->orderby('sorting','DESC')->get();
-        $special_name=Setting::where('key','specialOffersName')->first();
         $reviews=$this->get_reviews();
         $partners=$this->get_partners();
-  
+        if(  $special_name!==null ){
+            if(!$special_name->is_hidden)$specials= Advert::where([['type',null],['visible',1]])->orderBy('main', 'desc')->orderBy('updated_at', 'desc')->take(12)->get()->toArray();
+        
+        }
           return response()->json([
                 
                 'categories'=>$category,
@@ -44,7 +48,7 @@ class AdvertController extends Controller
                 'slider3'=>$slider3,
                 'slider4'=>$slider4,
                 'slider5'=>$slider5,
-                'specialOfferName'=>$special_name,
+                'specialOffersName'=>$special_name,
                 'reviews'=>$reviews,
                 'partner'=>$partners,
                  ], 200);
@@ -80,20 +84,44 @@ class AdvertController extends Controller
       
         
     }
-    public function get(){
+   public function get(Request $request){
         try{
-            $adverts=advert::latest()->get();
-            
-            if($adverts){
-                return response()->json(
-                $adverts
-                    
-                 , 200);
-               }
-           else  return response()->json(
-               null
-                    
-                 , 422);
+
+            $type=null;
+            $page=1;
+            $limit=12;
+           
+            if($request->filled('page')){
+                 
+                  $page=$request->page;
+            }
+            if($request->filled('limit')){
+                $limit=$request->limit;
+                  
+            }
+            if($request->filled('type')){
+                $type=$request->type;
+            }
+            if($page <=1){
+                $value=0;  
+                $this->hidde_main($type);    
+            }
+            else{
+                $value=($page-1)*$limit;
+            }
+               
+           
+                
+            $advert= Advert::where('type',$type)->offset($value)
+                ->limit($limit)->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
+                ->get();
+            $number= count(Advert::where('type',$type)
+                ->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
+                ->get());
+            return response()->json(
+                           ['result'=>$advert,
+                           'total'=>$number]
+                            , 200);
           
            }
             
@@ -102,7 +130,7 @@ class AdvertController extends Controller
         catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
           } catch (\Exception $e) {
-            return response()->json(['message' => 'An error occurred while requesting  adverts .'], 500);
+            return response()->json(['message'=>'An error occurred while requesting  adverts .'], 500);
           }
         
     }
@@ -215,9 +243,17 @@ class AdvertController extends Controller
                 ->orderBy('main', 'desc')->orderBy('updated_at', 'desc')
                 ->get());
         }
-                
-                    
-       
+          
+        if($type==null )          
+       {
+        $special_name=Setting::where('key','specialOffersName')->first(); 
+        if( $special_name->is_hidden){
+            return response()->json(
+                ['result'=>[],
+                'total'=>0]
+                 , 200);
+        }
+       }
        
           return response()->json(
                 ['result'=>$advert,
@@ -294,7 +330,7 @@ class AdvertController extends Controller
                 'description' => 'string|required',
                 'discount' => 'integer|between:0,100',
                 'code' => 'string|nullable',
-                'type' => 'bool',
+                'type'=>'nullable|bool',
                 'main' => 'bool|required',
                 'category_id' => 'integer|exists:categories,id',
                 'image' => 'file|required|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
@@ -344,9 +380,11 @@ class AdvertController extends Controller
             
             $result=$advert->save();
            if ($result){
-                $adverts=Advert::where('type',$advert->type)->latest()->get();
+                
                 return response()->json(
-                 $adverts
+                    [
+                        'result'=>"data added successfully"
+                       ]
                  , 200);
           }
             else{
@@ -390,12 +428,14 @@ class AdvertController extends Controller
                     $this->deleteImage($advert->seo_image);
                 }
                
-                $type=$advert->type;
+                
                 $result= $advert->delete();
                if($result) {
-                $adverts=Advert::where('type',$type)->latest()->get();
+                
                 return response()->json(
-                   $adverts
+                    [
+                        'result'=>"data deleted successfully"
+                       ]
                  , 200);
                 }
             }
@@ -436,9 +476,9 @@ class AdvertController extends Controller
                     'link' => 'url:http,https|nullable',
                    
                     'description' => 'string|nullable',
-                    'type'=>'bool|nullable',
+                    'type'=>'nullable|bool',
                     'discount' => 'integer|between:0,100',
-                    'code'=>'string',
+                    'code'=>'nullable|string',
                     'main' => 'bool|nullable',
                     'category_id' => 'integer|nullable|exists:categories,id',
                     'image' => 'file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
@@ -447,10 +487,11 @@ class AdvertController extends Controller
                     'expire_date' => 'nullable|date',
                     'short_description' => 'nullable|string',
                     // seo columns
-                    'seo_image' => 'file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
+                    'seo_image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
                     'seo_title' => 'nullable|string',
                     'seo_description' => 'nullable|string',
                     'seo_keywords' => 'nullable|string',
+                    'seo_delete' => 'nullable|string',
 
             ]);
             $validateadvert->sometimes('image', 'required|mimetypes:image/vnd.wap.wbmp', function ($input) {
@@ -467,9 +508,9 @@ class AdvertController extends Controller
                     'link' => 'url:http,https',
                    
                     'description' => 'string',
-                    'type'=>'bool|nullable',
+                    'type'=>'nullable|bool',
                     'discount' => 'integer|nullable|between:0,100',
-                    'code'=>'string|nullable',
+                     'code'=>'nullable|string',
                     'main' => 'bool',
                     'category_id' => 'integer|exists:categories,id',
                     'image' => 'file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
@@ -480,10 +521,11 @@ class AdvertController extends Controller
                     
                     // seo columns
                      
-                    'seo_image' => 'file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
+                    'seo_image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/wbmp',
                     'seo_title' => 'nullable|string',
                     'seo_description' => 'nullable|string',
                     'seo_keywords' => 'nullable|string',
+                    'seo_delete' => 'nullable|string',
 
         ]);
         $validateadvert->sometimes('image', 'required|mimetypes:image/vnd.wap.wbmp', function ($input) {
@@ -516,6 +558,11 @@ class AdvertController extends Controller
                     }
                     $advert->image = $this->storeImage($request->file('image'),'adverts'); 
                 }
+                if($request->has('seo_delete') ){
+                 
+                    $this->deleteImage($advert->seo_image);
+                      $advert->seo_image=null;
+                  }
                 if($request->hasFile('seo_image') and $request->file('seo_image')->isValid()){
                     if($advert->seo_image !=null){
                         $this->deleteImage($advert->seo_image);
@@ -529,9 +576,11 @@ class AdvertController extends Controller
                 }
                 
                 $advert->save();
-                $adverts=Advert::where('type',$advert->type)->latest()->get();
+              
                 return response()->json(
-                 $adverts
+                    [
+                        'result'=>"data updated successfully"
+                       ]
                  , 200);
             }
             else{
@@ -863,10 +912,17 @@ class AdvertController extends Controller
         $wordString = implode(' ', $wordArray);
         return [$result, $wordString];
     }
-    public function update_images(){
-       $advert=Advert::find(309);
-       $parts = explode('/',$advert->image,5);  
-       return $parts;
+    private function hidde_main($type){
+
+        $adverts= Advert::where([['type',$type],['main',1]])->skip(12)->take(PHP_INT_MAX)
+        ->orderBy('updated_at', 'desc')
+        ->get();
+        foreach( $adverts as $advert){
+        
+            $advert->main=0;
+            $advert->save();
+        }
+         
     }
    
 }

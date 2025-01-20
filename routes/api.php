@@ -26,16 +26,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::controller(CategoryController::class)->prefix('category')->group(function (){
-  
-  
-   
-    
-    //return codes and offers belonge to category_id or just codes and offers
-    Route::get('/','get');
-    Route::get('/{id}','show');
-    
-   });
    
    
  
@@ -54,60 +44,71 @@ Route::group(['middleware'=>'api','prefix'=>'auth'],function($router){
 Route::group(['middleware'=>'auth:api','prefix'=>'admin'],function($router){
     
     //Categories
-    Route::post('/category/add',[CategoryController::class,'store']);
-    Route::delete('/category/{id}',[CategoryController::class,'destroy']);
-    Route::post('/category/{id}',[CategoryController::class,'update']);
-    Route::get('/category/{id}',[CategoryController::class,'show'])->name('showCategory');
-    Route::get('/category',[CategoryController::class,'get'])->name('getCategory');
+    Route::post('/categories/add',[CategoryController::class,'store']);
+    Route::delete('/categories/{id}',[CategoryController::class,'destroy']);
+    Route::post('/categories/{id}',[CategoryController::class,'update']);
+    Route::get('/categories/{id}',[CategoryController::class,'show'])->name('showCategory');
+    Route::get('/categories',[CategoryController::class,'get'])->name('getCategory');
     
     //Adverts
-    Route::post('/advert/add',[AdvertController::class,'store']);
-    Route::delete('/advert/{id}',[AdvertController::class,'destroy']);
-    Route::post('/advert/{id}',[AdvertController::class,'update']);
-    Route::get('/advert/get',[AdvertController::class,'get'])->name('get');
-    Route::get('/advert/{id}',[AdvertController::class,'show'])->name('show');
-    Route::get('/advert',[AdvertController::class,'get_special_for_admin']);
+    Route::post('/adverts/add',[AdvertController::class,'store']);
+    Route::delete('/adverts/{id}',[AdvertController::class,'destroy']);
+    Route::post('/adverts/{id}',[AdvertController::class,'update']);
+    Route::get('/adverts/get',[AdvertController::class,'get'])->name('get');
+    Route::get('/adverts/{id}',[AdvertController::class,'show'])->name('show');
+    Route::get('/adverts',[AdvertController::class,'get_special_for_admin']);
    
 
     //Sliders
-    Route::post('/slider/add',[SliderController::class,'store']);
-    Route::get('/slider',[SliderController::class,'get']);
-    Route::post('/slider/{id}',[SliderController::class,'update']);
-    Route::delete('/slider/{id}',[SliderController::class,'destroy']);
-    // Route::get('/slider/hide',[SliderController::class,'hide']);
-    Route::get('/slider/{id}',[SliderController::class,'show_slider']);
+    Route::post('/sliders/add',[SliderController::class,'store']);
+    Route::post('/sliders/sort', [SliderController::class, 'reorderSliders']);
+    Route::get('/sliders',[SliderController::class,'get']);
+    Route::post('/sliders/{id}',[SliderController::class,'update']);
+    Route::delete('/sliders/{id}',[SliderController::class,'destroy']);
+   
+    Route::get('/sliders/{id}',[SliderController::class,'show_slider']);
 
     //customers
-    Route::get('/subscriber',[CustomerController::class,'index']);
+    Route::get('/subscribers',[CustomerController::class,'index']);
     //reviews
-    Route::post('/review/add',[ReviewController::class,'store']);
-    Route::delete('/review/{id}',[ReviewController::class,'destroy']);
-    Route::post('/review/{id}',[ReviewController::class,'update']);
-    Route::get('/review/{id}',[ReviewController::class,'show']);
+    Route::post('/reviews/add',[ReviewController::class,'store']);
+    Route::get('/reviews',[ReviewController::class,'get']);
+    Route::delete('/reviews/{id}',[ReviewController::class,'destroy']);
+    Route::post('/reviews/{id}',[ReviewController::class,'update']);
+    Route::get('/reviews/{id}',[ReviewController::class,'show']);
     //partners
-    Route::post('/partner/add',[PartnerController::class,'store']);
-    Route::delete('/partner/{id}',[PartnerController::class,'destroy']);
-    Route::post('/partner/{id}',[PartnerController::class,'update']);
-    Route::get('/partner/{id}',[PartnerController::class,'show']);
+    Route::post('/partners/add',[PartnerController::class,'store']);
+    Route::get('/partners',[PartnerController::class,'get']);
+    Route::delete('/partners/{id}',[PartnerController::class,'destroy']);
+    Route::post('/partners/{id}',[PartnerController::class,'update']);
+    Route::get('/partners/{id}',[PartnerController::class,'show']);
     //settings 
-    Route::post('/setting/add',[SettingController::class,'store']);
-    Route::delete('/setting/{id}',[SettingController::class,'destroy']);
-    Route::post('/setting/{key}',[SettingController::class,'update']);
-    Route::get('/setting/{key}',[SettingController::class,'show']);
+   // Route::post('/settings/add',[SettingController::class,'store']);
+    Route::get('/settings',[SettingController::class,'get']);
+   // Route::delete('/settings/{id}',[SettingController::class,'destroy']);
+    Route::get('/settings/{data}',[SettingController::class,'show']);
+    Route::post('/settings/{id}',[SettingController::class,'update']);
+  
     
  });
 
-Route::controller(SliderController::class)->prefix('slider')->group(function (){
+
+
+
+
+
+Route::controller(SliderController::class)->prefix('sliders')->group(function (){
   
     Route::get('/{id}','show_slider');
+    Route::post('/sort','sliders_sorting');
    });
 
-Route::controller(CustomerController::class)->prefix('subscriber')->group(function (){
+Route::controller(CustomerController::class)->prefix('subscribers')->group(function (){
     Route::post('/add','store');
    
     
    });
-Route::controller(UserController::class)->prefix('user')->group(function (){
+Route::controller(UserController::class)->prefix('users')->group(function (){
     
     Route::get('/','index')->middleware('api.logger');
     Route::get('/get','get');
@@ -116,7 +117,7 @@ Route::controller(UserController::class)->prefix('user')->group(function (){
     
    });
 
-Route::controller(AdvertController::class)->prefix('advert')->group(function () {
+Route::controller(AdvertController::class)->prefix('adverts')->group(function () {
    
     Route::get('/', 'get_data')->name('getAdvert'); // Get adverts by type /category_id
     Route::get('/index', 'index')->name('indexAdvert'); // List all adverts
@@ -126,15 +127,10 @@ Route::controller(AdvertController::class)->prefix('advert')->group(function () 
    // Route::get('/search', 'search')->name('searchAdvert'); // Search adverts by query
     Route::get('/{id}', 'show')->name('showAdvert')->where('id','[0-9]+'); // Get advert by ID
 });
+Route::controller(PartnerController::class)->prefix('partners')->group(function (){
    
-
-
-Route::controller(PartnerController::class)->prefix('partner')->group(function (){
    
-    Route::post('/add','store')->middleware('auth:api');
-    Route::get('/','index');
-    Route::delete('/{id}','destroy')->middleware('auth:api');
-    Route::post('/{id}','update')->middleware('auth:api');
+    Route::get('/','get');
     
    });
    
@@ -145,16 +141,32 @@ Route::get('/view-clear', function() {
     $exitCode = Artisan::call('route:cache');
     return '<h1>View cache cleared</h1>';
 });
+Route::controller(ReviewController::class)->prefix('reviews')->group(function (){
 
-Route::controller(ReviewController::class)->prefix('review')->group(function (){
-   
-   
-    Route::get('/','index');
+    Route::get('/','get');
     
    });
-Route::controller(SettingController::class)->prefix('setting')->group(function (){
+
+
+
+   Route::controller(SettingController::class)->prefix('settings')->group(function (){
    
-    Route::get('/{key}','show');});
+    Route::get('/{key}','show');
+});
+
+Route::controller(CategoryController::class)->prefix('categories')->group(function (){
+
+    //return codes and offers belonge to category_id or just codes and offers
+    Route::get('/','get');
+    Route::get('/{id}','show');
+    
+});
+Route::controller(SettingController::class)->prefix('settings')->group(function (){
+ 
+    Route::get('/','get');
+    Route::get('/{id}','show');
+    
+});
    
    
    

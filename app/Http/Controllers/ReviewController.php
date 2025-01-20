@@ -61,7 +61,9 @@ class ReviewController extends Controller
            if ($result){
                 return response()->json(
                     
-            Review::latest()->get()
+                    [
+                        'result'=>"data added successfully"
+                       ]
                  , 201);
             }
             else{
@@ -99,8 +101,10 @@ class ReviewController extends Controller
             { 
                  
                 $result= $Review->delete();
-                $reviews=Review::latest()->get();
-                if($result)return response()->json($reviews, 200);
+               
+                if($result)return response()->json( [
+                    'result'=>"data deleted successfully"
+                   ], 200);
             }
     
            
@@ -163,9 +167,11 @@ class ReviewController extends Controller
             
             if ($result){
                 
-               $reviews=Review::latest()->get();
+              
                 
-               return response()->json($reviews, 200);
+               return response()->json( [
+                'result'=>"data updated successfully"
+               ], 200);
             }
             else{
                 return response()->json(null, 422);
@@ -210,7 +216,7 @@ class ReviewController extends Controller
                else{
                 return response()->json([
                     
-                    'data'=> 'لم يتم العثور على الفئة'
+                    'data'=> 'لم يتم العثور على البيانات'
                       
                    ], 422);
                }

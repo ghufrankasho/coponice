@@ -27,7 +27,7 @@ class UserController extends Controller
     }
     public function sendEmail(Request $request){
       
-        $email = 'ghufrankasho2@gmail.com';
+        $email = 'alwasah8@gmail.com';
       
         $data = [
             'userName' => $request->userName,
